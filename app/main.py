@@ -79,9 +79,11 @@ async def health_check():
     """Detailed health check"""
     return {
         "status": "healthy",
+        "soul_status": "AWAKENED",
         "environment": settings.ENVIRONMENT,
         "database": "connected",
-        "cache": "active" if settings.CACHE_ENABLED else "disabled"
+        "cache": "active" if settings.CACHE_ENABLED else "disabled",
+        "version": "0.1.0"
     }
 
 
