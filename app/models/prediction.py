@@ -2,7 +2,7 @@
 Prediction model
 """
 from sqlalchemy import Column, String, DateTime, JSON, BigInteger, Float, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from app.models.types import UUID
 from datetime import datetime
 
 from app.database import Base
@@ -13,7 +13,7 @@ class Prediction(Base):
     __tablename__ = "predictions"
     
     id = Column(BigInteger, primary_key=True, autoincrement=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    user_id = Column(UUID(), ForeignKey("users.id"), nullable=False)
     prediction_type = Column(String(50), nullable=False)  # 'churn', 'purchase', 'recommendation'
     prediction_value = Column(JSON, default=dict)  # The actual prediction data
     confidence = Column(Float, default=0.0)  # Confidence score 0-1
@@ -34,7 +34,7 @@ class MLModel(Base):
     accuracy = Column(Float, default=0.0)
     trained_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     model_path = Column(String(255), nullable=True)  # Path to saved model
-    metadata = Column(JSON, default=dict)  # Training params, etc.
+    model_metadata = Column(JSON, default=dict)  # Training params, etc.
     
     def __repr__(self):
         return f"<MLModel {self.model_name} v{self.version}>"

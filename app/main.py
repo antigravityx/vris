@@ -53,9 +53,19 @@ app = FastAPI(
 )
 
 # CORS Configuration
+# Allow Netlify in production + localhost for development
+allowed_origins = ["*"]  # Allow all for now, can restrict later
+if settings.ENVIRONMENT == "production":
+    allowed_origins = [
+        "https://magnificent-sherbet-c15c1d.netlify.app",
+        "http://localhost:3000",
+        "http://localhost:5000",
+        "*"  # Fallback para file://
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -88,7 +98,7 @@ async def health_check():
 
 
 # Include API routers
-app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(auth.router, prefix="/auth", tags=["Authentication"])  # Changed from /api/auth
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(recommendations.router, prefix="/api/recommendations", tags=["Recommendations"])
 app.include_router(predictions.router, prefix="/api/predictions", tags=["Predictions"])

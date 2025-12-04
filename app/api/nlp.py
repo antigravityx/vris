@@ -107,20 +107,78 @@ async def chat(
     """
     Chat with AI assistant
     
-    Uses Hugging Face conversation models or local LM Studio
+    Uses local LM Studio or Ollama based on config
     """
-    # TODO: Implement actual chat with Hugging Face or LM Studio
+    import httpx
+    from app.config import settings
     
-    responses = {
-        "hola": "¡Hola! Soy VRIS, el asistente inteligente de VerixRichon Factory. ¿En qué puedo ayudarte?",
-        "ayuda": "Puedo ayudarte con recomendaciones, análisis de datos y predicciones. ¿Qué necesitas?",
-        "gracias": "¡De nada! Estoy aquí para ayudarte. 🚀"
-    }
+    system_prompt = "Eres VRIS, el asistente inteligente de VerixRichon Factory. Responde de manera concisa y útil en español."
     
-    message_lower = request.message.lower()
-    response = responses.get(message_lower, "Entiendo tu mensaje. Actualmente estoy en desarrollo y pronto podré responder mejor.")
-    
-    return ChatResponse(
-        response=response,
-        model="vris_assistant_v1"
-    )
+    try:
+        if settings.MODEL_PROVIDER == "lm_studio":
+            # LM Studio follows OpenAI API format
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                payload = {
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": request.message}
+                    ],
+                    "temperature": 0.7,
+                    "max_tokens": -1,
+                    "stream": False
+                }
+                
+                response = await client.post(
+                    f"{settings.LM_STUDIO_URL}/chat/completions",
+                    json=payload
+                )
+                
+                if response.status_code != 200:
+                    return ChatResponse(
+                        response=f"Error conectando con LM Studio: {response.text}",
+                        model="error"
+                    )
+                    
+                data = response.json()
+                content = data["choices"][0]["message"]["content"]
+                model_id = data.get("model", "local-model")
+                
+                return ChatResponse(response=content, model=model_id)
+                
+            # Ollama API
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                payload = {
+                    "model": "llama3.1",  # Modelo descargado
+                    "prompt": f"{system_prompt}\n\nUser: {request.message}\nAssistant:",
+                    "stream": False
+                }
+                
+                response = await client.post(
+                    f"{settings.OLLAMA_URL}/generate",
+                    json=payload
+                )
+                
+                if response.status_code != 200:
+                    return ChatResponse(
+                        response=f"Error conectando con Ollama: {response.text}",
+                        model="error"
+                    )
+                    
+                data = response.json()
+                content = data.get("response", "")
+                
+                return ChatResponse(response=content, model="ollama-model")
+        
+        else:
+            return ChatResponse(
+                response="Proveedor de modelo no configurado correctamente.",
+                model="config-error"
+            )
+            
+    except Exception as e:
+        print(f"Error calling local LLM: {e}")
+        # Fallback to mock if local model fails
+        return ChatResponse(
+            response="No pude conectar con mi cerebro local. ¿Está LM Studio/Ollama corriendo? (Respuesta de respaldo)",
+            model="fallback-mock"
+        )

@@ -8,17 +8,29 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Convert PostgreSQL URL to async format
-database_url = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+# Convert PostgreSQL URL to async format if needed
+if settings.DATABASE_URL.startswith("postgresql://"):
+    database_url = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+else:
+    database_url = settings.DATABASE_URL
+
+# Configure engine args based on DB type
+engine_args = {
+    "echo": settings.DEBUG,
+    "future": True,
+}
+
+if "sqlite" in database_url:
+    engine_args["connect_args"] = {"check_same_thread": False}
+else:
+    engine_args["pool_pre_ping"] = True
+    engine_args["pool_size"] = 5
+    engine_args["max_overflow"] = 10
 
 # Create async engine
 engine = create_async_engine(
     database_url,
-    echo=settings.DEBUG,
-    future=True,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10
+    **engine_args
 )
 
 # Create async session factory

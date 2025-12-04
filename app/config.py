@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     # Database
-    DATABASE_URL: str = "postgresql://vris:vris123@localhost:5432/vris_db"
+    # Default to SQLite for local dev if no env var set
+    DATABASE_URL: str = "sqlite+aiosqlite:///./vris.db"
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
@@ -47,6 +48,11 @@ class Settings(BaseSettings):
     # ML Models
     ML_MODELS_PATH: str = "./app/ml/models/"
     RETRAIN_INTERVAL_HOURS: int = 24
+    
+    # Local LLM (Soberanía Económica)
+    MODEL_PROVIDER: str = "lm_studio"  # Options: "lm_studio", "ollama"
+    LM_STUDIO_URL: str = "http://localhost:1234/v1"
+    OLLAMA_URL: str = "http://localhost:11434/api"
     
     # Logging
     LOG_LEVEL: str = "INFO"

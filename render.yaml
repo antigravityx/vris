@@ -1,0 +1,40 @@
+services:
+  # VRIS Backend Web Service
+  - type: web
+    name: vris-backend-primary
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: False
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 30
+      - key: CORS_ORIGINS
+        value: '["https://magnificent-sherbet-c15c1d.netlify.app","*"]'
+      - key: CACHE_ENABLED
+        value: False
+      - key: LOG_LEVEL
+        value: INFO
+      - key: MODEL_PROVIDER
+        value: huggingface
+      - key: HUGGINGFACE_API_KEY
+        sync: false  # Se configura manualmente en dashboard
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vris-postgresql-primary
+          property: connectionString
+
+databases:
+  # PostgreSQL Database
+  - name: vris-postgresql-primary
+    databaseName: vris_db
+    user: vris_user
